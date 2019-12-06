@@ -76,7 +76,7 @@ class ComposeFunc : public Func<S,T> {
 public:
 	ComposeFunc(shared_ptr<Func<S,M>> first, shared_ptr<Func<M,T>> second) : first_(first), second_(second) {}
 	void operator()(const S& input, Sink<T>& sink) {
-		 PtrFuncSink<M,T> m_sink(second_.get(), &sink);
+		PtrFuncSink<M,T> m_sink(second_.get(), &sink);
 		(*first_)(input, m_sink);
 	}
 	
@@ -111,7 +111,6 @@ class DoubleFunc : public Func<int, int> {
 void simpPrintInt(const int& value) {
 	cout << value << endl;
 }
-
 
 void simpDoubleInt(const int& value, Sink<int>& next) {
 	next(value * 2);
