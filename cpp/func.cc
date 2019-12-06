@@ -108,18 +108,54 @@ class DoubleFunc : public Func<int, int> {
 	}
 };
 
-void simpPrintInt(const int& value) {
+template<typename T>
+class SimpleSink : public Sink<T> {
+public:
+	typedef void(*SimpleSinkPtr)(const T&);
+	SimpleSink(SimpleSinkPtr fn) : fn_(fn) {}
+	void operator()(const T& input) {
+		fn_(input);
+	}
+private:
+	std::function<void(const T&)> fn_;
+};
+
+template<typename T>
+shared_ptr<Sink<T>> make_sink(void(*fn)(const T&)) {
+	return make_shared<SimpleSink<T>>(fn);
+}	
+
+template<typename S, typename T>
+class SimpleFunc : public Func<S,T> {
+public:
+	typedef void(*SimpleFuncPtr)(const S&, Sink<T>&);
+	SimpleFunc(SimpleFuncPtr fn) : fn_(fn) {}
+	void operator()(const S& input, Sink<T>& sink) {
+		fn_(input, sink);
+	}
+private:
+	std::function<void(const S&, Sink<T>&)> fn_;
+};
+
+template<typename S, typename T>
+shared_ptr<Func<S,T>> make_func(void(*fn)(const S&, Sink<T>&)) {
+	return make_shared<SimpleFunc<S,T>>(fn);
+}	
+
+template<typename T>
+void simpPrint(const T& value) {
 	cout << value << endl;
 }
 
-void simpDoubleInt(const int& value, Sink<int>& next) {
+template<typename T>
+void simpDouble(const T& value, Sink<T>& next) {
 	next(value * 2);
 	next(value * 2 + 1);
 }
 
 int main() {
-	shared_ptr<Sink<int>> sink = make_shared<PrintSink<int>>();
-	shared_ptr<Func<int, int>> func = make_shared<DoubleFunc>();
+	shared_ptr<Sink<int>> sink = make_sink(&simpPrint<int>); // make_shared<PrintSink<int>>();
+	shared_ptr<Func<int, int>> func = make_func(&simpDouble<int>); // make_shared<DoubleFunc>();
 	auto ret = func->compose(func)->apply(sink);
 	// auto ret = apply(compose(func, func), sink);
 	// auto ret = apply(func, apply(func, sink));
@@ -131,4 +167,3 @@ int main() {
 	}
 	return 0;
 }
-
